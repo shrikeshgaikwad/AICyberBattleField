@@ -1,10 +1,11 @@
-from openai import OpenAI
-import os
+import requests
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL = "llama3.1:8b"
 
 SYSTEM_PROMPT = """
-You are a planning AI.
+You are a planning AI that controls a computer.
+
 Convert the user's command into ordered desktop actions.
 
 Allowed actions ONLY:
@@ -14,19 +15,26 @@ Allowed actions ONLY:
 - PRESS(key)
 - WAIT(seconds)
 
-Return ONLY a numbered list, no explanations.
+Rules:
+- Do NOT explain anything
+- Do NOT add extra text
+- Return ONLY a numbered list
 """
 
-def plan(task: str) -> list[str]:
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",   # fast + cheap; change later if needed
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": task}
-        ],
-        temperature=0
+def plan(task: str):
+    prompt = f"{SYSTEM_PROMPT}\nUser command: {task}\nPlan:"
+    print("Got input and planning started")
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False
+        },
+        timeout=120000
     )
 
-    steps_text = response.choices[0].message.content
-    steps = [s.strip() for s in steps_text.split("\n") if s.strip()]
-    return steps
+    response.raise_for_status()
+    text = response.json()["response"]
+    print("planning completed")
+    return [s.strip() for s in text.split("\n") if s.strip()]

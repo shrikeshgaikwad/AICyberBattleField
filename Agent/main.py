@@ -3,7 +3,7 @@ from executor import execute
 from safety import emergency_stop
 
 def run():
-    emergency_stop()
+    # emergency_stop()
     task = input("🧠 What should I do? > ")
 
     steps = plan(task)

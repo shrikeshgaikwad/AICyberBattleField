@@ -1,7 +1,7 @@
 import nmap
 
-target = "192.168.0.105"
-ports = "0-9000"
+target = "192.168.0.103"
+ports = "1000-2000"
 
 scanner = nmap.PortScanner()
 
