@@ -23,7 +23,7 @@ for host in scanner.all_hosts():
             state = scanner[host][proto][port]['state']
             print(f"Port {port}: {state}")
 
-
+print("done")
 
 
 # import nmap
