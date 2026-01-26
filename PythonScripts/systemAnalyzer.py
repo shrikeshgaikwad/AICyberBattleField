@@ -1,7 +1,7 @@
 import nmap
 
-target = "192.168.0.103"
-ports = "1000-2000"
+target = str(input("enter ip : "))
+ports = "1000-10000"
 
 scanner = nmap.PortScanner()
 
@@ -20,3 +20,31 @@ for host in scanner.all_hosts():
         for port in ports:
             state = scanner[host][proto][port]['state']
             print(f"Port {port}: {state}")
+
+
+
+
+# import nmap
+
+# scanner = nmap.PortScanner()
+
+# targetIp = "192.168.0.103"
+# ports = "1000-8080"
+
+# scanner.scan(hosts=targetIp,ports=ports)
+
+# if targetIp in scanner.all_hosts():
+#     protocols = scanner[targetIp].state()
+#     print(protocols)
+
+#     for proto in protocols:
+#         scannedPorts = scanner[targetIp][proto].keys()
+#         for port in sorted(scannedPorts):
+#             state = scanner[targetIp][proto][port]['state']
+#             print(state)
+
+# else:
+#     print("host down")
+
+
+
