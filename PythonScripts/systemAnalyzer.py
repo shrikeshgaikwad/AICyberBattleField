@@ -8,6 +8,8 @@ scanner = nmap.PortScanner()
 print(f"Scannig started for {target}")
 
 
+
+
 scanner.scan(target,ports)
 for host in scanner.all_hosts():
     print("Host:", host)
