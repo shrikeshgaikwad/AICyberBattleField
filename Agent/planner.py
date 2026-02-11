@@ -1,5 +1,5 @@
 import requests
-
+from PythonScripts.VulnerabilityDetector import text
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3.1:8b"
 
