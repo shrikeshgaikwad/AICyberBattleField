@@ -4,7 +4,7 @@ vulnerabilities = {}
 
 def run_scan():
     target = str(input("enter ip : "))
-    ports = "1000-10000"
+    ports = "0-10000"
 
     scanner = nmap.PortScanner()
 
