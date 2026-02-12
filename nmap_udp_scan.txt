@@ -1,0 +1,31 @@
+# Nmap 7.97 scan initiated Wed Feb 11 23:47:30 2026 as: nmap -sU --top-ports 100 -sV --open -oN G:\\Projects\\CyberBattlefield\\AICyberBattleField\\nmap_udp_scan.txt 192.168.0.3
+Nmap scan report for 192.168.0.3
+Host is up (0.0013s latency).
+Not shown: 95 closed udp ports (port-unreach)
+PORT     STATE         SERVICE     VERSION
+137/udp  open|filtered netbios-ns
+138/udp  open|filtered netbios-dgm
+1900/udp open          upnp?
+4500/udp open|filtered nat-t-ike
+5353/udp open|filtered zeroconf
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port1900-UDP:V=7.97%I=7%D=2/11%Time=698CC7C3%P=i686-pc-windows-windows%
+SF:r(UPNP_MSEARCH,B37,"HTTP/1\.1\x20200\x20OK\r\nST:\x20uuid:3eb777f2-353c
+SF:-4c7e-b3b0-203fcabedbc5\r\nUSN:\x20uuid:3eb777f2-353c-4c7e-b3b0-203fcab
+SF:edbc5\r\nLocation:\x20http://192\.168\.0\.3:2869/upnphost/udhisapi\.dll
+SF:\?content=uuid:3eb777f2-353c-4c7e-b3b0-203fcabedbc5\r\nOPT:\"http://sch
+SF:emas\.upnp\.org/upnp/1/0/\";\x20ns=01\r\n01-NLS:\x20f54e2f1a7743a006d2a
+SF:b8ec58bc60c2e\r\nCache-Control:\x20max-age=1800\r\nServer:\x20Microsoft
+SF:-Windows/10\.0\x20UPnP/1\.0\x20UPnP-Device-Host/1\.0\r\nExt:\x20\r\nDat
+SF:e:\x20Wed,\x2011\x20Feb\x202026\x2016:51:26\x20GMT\r\n\r\nHTTP/1\.1\x20
+SF:200\x20OK\r\nST:\x20urn:schemas-upnp-org:service:ConnectionManager:1\r\
+SF:nUSN:\x20uuid:3eb777f2-353c-4c7e-b3b0-203fcabedbc5::urn:schemas-upnp-or
+SF:g:service:ConnectionManager:1\r\nLocation:\x20http://192\.168\.0\.3:286
+SF:9/upnphost/udhisapi\.dll\?content=uuid:3eb777f2-353c-4c7e-b3b0-203fcabe
+SF:dbc5\r\nOPT:\"http://schemas\.upnp\.org/upnp/1/0/\";\x20ns=01\r\n01-NLS
+SF::\x20f54e2f1a7743a006d2ab8ec58bc60c2e\r\nCache-Control:\x20max-age=1800
+SF:\r\nServer:\x20Microsoft-Windows/10\.0\x20UPnP/1\.0\x20UPnP-Device-Host
+SF:/1\.");
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Wed Feb 11 23:49:23 2026 -- 1 IP address (1 host up) scanned in 112.49 seconds

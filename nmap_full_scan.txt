@@ -1,0 +1,31 @@
+# Nmap 7.97 scan initiated Wed Feb 11 23:47:31 2026 as: nmap -sS -sV -O -p- --open --min-rate 1000 -T4 -oN G:\\Projects\\CyberBattlefield\\AICyberBattleField\\nmap_full_scan.txt 192.168.0.3
+Nmap scan report for 192.168.0.3
+Host is up (0.0011s latency).
+Not shown: 65516 closed tcp ports (reset), 1 filtered tcp port (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE       VERSION
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+1521/tcp  open  oracle-tns    Oracle TNS Listener 10.2.0.1.0 (for 32-bit Windows)
+2869/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+3306/tcp  open  mysql         MySQL (unauthorized)
+5040/tcp  open  unknown
+5432/tcp  open  postgresql    PostgreSQL DB 9.6.0 or later
+5560/tcp  open  http          Oracle Application Server httpd 9.0.4.1.0
+5580/tcp  open  ormi          Oracle Remote Method Invocation
+33060/tcp open  mysqlx        MySQL X protocol listener
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49676/tcp open  unknown
+49683/tcp open  msrpc         Microsoft Windows RPC
+OS fingerprint not ideal because: maxTimingRatio (1.694000e+00) is greater than 1.4
+No OS matches for host
+Network Distance: 0 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Wed Feb 11 23:49:06 2026 -- 1 IP address (1 host up) scanned in 95.45 seconds

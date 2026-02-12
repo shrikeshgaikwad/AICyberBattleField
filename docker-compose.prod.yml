@@ -1,0 +1,72 @@
+# Production Docker Compose configuration
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+    ports: []  # Don't expose port in production directly
+
+  redis:
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports: []  # Don't expose port in production directly
+
+  ollama:
+    restart: always
+    ports: []  # Don't expose port in production directly
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+  cyber_battle:
+    restart: always
+    environment:
+      DEBUG: "false"
+      LOG_LEVEL: "WARNING"
+    stdin_open: false
+    tty: false
+    volumes:
+      - cyber_results:/app/results:rw
+      - cyber_logs:/app/logs:rw
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "com.example.service=cyber_battle"
+
+  # Remove pgAdmin from production (use profiles)
+  pgadmin:
+    profiles:
+      - ""  # Disabled by default in production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  ollama_data:
+    driver: local
+  cyber_results:
+    driver: local
+  cyber_logs:
+    driver: local

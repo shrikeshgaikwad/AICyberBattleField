@@ -1,0 +1,159 @@
+services:
+  # PostgreSQL database for persistent storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: cyber_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-cyber_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_DB: ${DB_NAME:-cyber_battlefield}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - cyber_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cyber_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: cyber_redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis_data:/data
+    networks:
+      - cyber_network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Ollama service for LLM capabilities
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_service
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+    ports:
+      - "11434:11434"
+    networks:
+      - cyber_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    # Uncomment and adjust to pull model on startup
+    # command: ollama pull llama2:13b
+
+  # AI Cyber Battlefield application
+  cyber_battle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: cyber_battle_app
+    depends_on:
+      ollama:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Ollama configuration
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434/api/generate}
+      MODEL: ${MODEL:-llama2:13b}
+      
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-cyber_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password}
+      DB_NAME: ${DB_NAME:-cyber_battlefield}
+      DATABASE_URL: postgresql://${DB_USER:-cyber_user}:${DB_PASSWORD:-secure_password}@postgres:5432/${DB_NAME:-cyber_battlefield}
+      
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
+      
+      # Application settings
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      DEBUG: ${DEBUG:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      
+      # API Keys (use .env file)
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      
+    volumes:
+      - .:/app
+      - cyber_results:/app/results
+      - cyber_logs:/app/logs
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+    networks:
+      - cyber_network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cyber_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@cyberfield.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin_password}
+    ports:
+      - "5050:80"
+    networks:
+      - cyber_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    profiles:
+      - debug
+
+# Volumes for persistent data
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  ollama_data:
+    driver: local
+  cyber_results:
+    driver: local
+  cyber_logs:
+    driver: local
+
+# Network configuration
+networks:
+  cyber_network:
+    driver: bridge

@@ -1,2 +1,1 @@
-requests
-python-nmap
+# No external dependencies required - using standard library only
