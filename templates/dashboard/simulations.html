@@ -1,0 +1,75 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Simulations — Cyber Battlefield{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>⚔️ Red vs Blue Simulations</h1>
+    <p>Adversarial co-evolution — attack and defense learning cycles</p>
+</div>
+
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot purple"></span> Simulations</h3>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Name</th><th>Status</th><th>Targets</th><th>Rounds</th><th>Progress</th><th>Created</th></tr></thead>
+                <tbody>
+                {% for s in simulations %}
+                <tr>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td><span class="badge-status badge-{% if s.status == 'completed' %}success{% elif s.status == 'running' %}running{% elif s.status == 'failed' %}failed{% else %}pending{% endif %}">{{ s.status }}</span></td>
+                    <td class="mono">{{ s.target_ips|join:", " }}</td>
+                    <td>{{ s.total_rounds_completed }}/{{ s.max_rounds }}</td>
+                    <td>
+                        <div style="background:var(--border);border-radius:4px;height:8px;width:100px;overflow:hidden;">
+                            <div style="background:var(--purple);height:100%;width:{% widthratio s.total_rounds_completed s.max_rounds 100 %}%;border-radius:4px;"></div>
+                        </div>
+                    </td>
+                    <td>{{ s.created_at|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No simulations created yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot purple"></span> Recent Rounds</h3>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Simulation</th><th>Round</th><th>Target</th><th>🔴 Score</th><th>🔵 Score</th><th>Winner</th><th>Vulns</th><th>Exploits</th><th>Detections</th><th>Blocks</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for r in recent_rounds %}
+                <tr>
+                    <td>{{ r.simulation.name|truncatechars:20 }}</td>
+                    <td class="mono">#{{ r.round_number }}</td>
+                    <td class="mono">{{ r.target_ip|default:"—" }}</td>
+                    <td style="color:var(--red-primary);font-weight:700;" class="mono">{{ r.red_team_score|floatformat:0 }}</td>
+                    <td style="color:var(--blue-primary);font-weight:700;" class="mono">{{ r.blue_team_score|floatformat:0 }}</td>
+                    <td>
+                        {% if r.red_team_score > r.blue_team_score %}
+                            <span style="color:var(--red-primary);">🔴 Red</span>
+                        {% elif r.blue_team_score > r.red_team_score %}
+                            <span style="color:var(--blue-primary);">🔵 Blue</span>
+                        {% else %}
+                            🤝 Tie
+                        {% endif %}
+                    </td>
+                    <td>{{ r.red_team_vulns_found }}</td>
+                    <td>{{ r.red_team_exploits_succeeded }}/{{ r.red_team_exploits_attempted }}</td>
+                    <td>{{ r.blue_team_detections }}</td>
+                    <td>{{ r.blue_team_blocks }}</td>
+                    <td><span class="badge-status badge-{% if r.status == 'completed' %}success{% elif r.status == 'failed' %}failed{% else %}running{% endif %}">{{ r.status }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="11" style="text-align:center;color:var(--text-muted);">No rounds completed yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

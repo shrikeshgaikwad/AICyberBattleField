@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ─── PostgreSQL Database ───
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cyberbattlefield
+      POSTGRES_USER: cyber_admin
+      POSTGRES_PASSWORD: cyber_password_123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyber_admin -d cyberbattlefield"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis Cache & Message Broker ───
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Ollama LLM Server ───
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
+
+  # ─── Cyber Battlefield Application ───
+  app:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 cyberbattlefield.asgi:application"
+    volumes:
+      - .:/app
+      - static_data:/app/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DJANGO_SETTINGS_MODULE=cyberbattlefield.settings
+      - DB_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11434
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Celery Worker (async tasks) ───
+  celery:
+    build: .
+    command: celery -A cyberbattlefield worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=cyberbattlefield.settings
+      - DB_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11434
+
+  # ─── Vulnerable Targets (for simulation) ───
+  metasploitable:
+    image: tleemcjr/metasploitable2:latest
+    profiles: ["targets"]
+    networks:
+      - target_net
+
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    profiles: ["targets"]
+    ports:
+      - "8080:80"
+    networks:
+      - target_net
+
+  juiceshop:
+    image: bkimminich/juice-shop:latest
+    profiles: ["targets"]
+    ports:
+      - "3000:3000"
+    networks:
+      - target_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  static_data:
+
+networks:
+  target_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

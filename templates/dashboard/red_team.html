@@ -1,0 +1,106 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Red Team — Cyber Battlefield{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🔴 Red Team — Offensive AI</h1>
+    <p>Reconnaissance, vulnerability detection, and exploit management</p>
+</div>
+
+<div class="grid grid-2 section">
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot red"></span> Scan Results</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Type</th><th>Target</th><th>Ports</th><th>Status</th><th>Duration</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for s in scans %}
+                <tr>
+                    <td class="mono">{{ s.scan_type }}</td>
+                    <td class="mono">{{ s.target_ip }}</td>
+                    <td>{{ s.open_ports|length }}</td>
+                    <td><span class="badge-status badge-{% if s.status == 'completed' %}success{% elif s.status == 'failed' %}failed{% else %}running{% endif %}">{{ s.status }}</span></td>
+                    <td>{% if s.duration_seconds %}{{ s.duration_seconds|floatformat:1 }}s{% else %}—{% endif %}</td>
+                    <td>{{ s.created_at|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No scans yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot red"></span> Attack Plans</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Target</th><th>Steps</th><th>Progress</th><th>Success</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for p in plans %}
+                <tr>
+                    <td class="mono">{{ p.target_ip }}</td>
+                    <td>{{ p.total_steps }}</td>
+                    <td>{{ p.completed_steps }}/{{ p.total_steps }}</td>
+                    <td>{% if p.success_rate %}{{ p.success_rate|floatformat:0 }}%{% else %}—{% endif %}</td>
+                    <td>{{ p.created_at|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No plans yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot red"></span> Discovered Vulnerabilities</h3>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Severity</th><th>CVE</th><th>Title</th><th>Service</th><th>Port</th><th>Method</th><th>Exploitable</th></tr></thead>
+                <tbody>
+                {% for v in vulnerabilities %}
+                <tr>
+                    <td><span class="badge-severity badge-{{ v.severity }}">{{ v.severity }}</span></td>
+                    <td class="mono">{{ v.cve_id|default:"—" }}</td>
+                    <td>{{ v.title|truncatechars:60 }}</td>
+                    <td>{{ v.affected_service|truncatechars:30 }}</td>
+                    <td class="mono">{{ v.affected_port|default:"—" }}</td>
+                    <td>{{ v.detection_method }}</td>
+                    <td>{% if v.exploitable %}✅{% elif v.exploitable == False %}❌{% else %}❓{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No vulnerabilities discovered yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot red"></span> Exploit Attempts</h3>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Type</th><th>Target</th><th>Port</th><th>Status</th><th>Session</th><th>Duration</th></tr></thead>
+                <tbody>
+                {% for e in exploits %}
+                <tr>
+                    <td class="mono">{{ e.exploit_type }}</td>
+                    <td class="mono">{{ e.target_ip }}</td>
+                    <td class="mono">{{ e.target_port|default:"—" }}</td>
+                    <td><span class="badge-status badge-{% if e.status == 'success' %}success{% elif e.status == 'failed' %}failed{% else %}pending{% endif %}">{{ e.status }}</span></td>
+                    <td>{% if e.session_obtained %}🔓{% else %}—{% endif %}</td>
+                    <td>{% if e.duration_seconds %}{{ e.duration_seconds|floatformat:1 }}s{% else %}—{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No exploits attempted yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

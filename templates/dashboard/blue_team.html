@@ -1,0 +1,82 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Blue Team — Cyber Battlefield{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🔵 Blue Team — Defensive AI</h1>
+    <p>Intrusion detection, anomaly analysis, and automated response</p>
+</div>
+
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot blue"></span> Security Alerts</h3>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Severity</th><th>Source</th><th>Status</th><th>Title</th><th>Source IP</th><th>Dest</th><th>Confidence</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for a in alerts %}
+                <tr>
+                    <td><span class="badge-severity badge-{{ a.severity }}">{{ a.severity }}</span></td>
+                    <td>{{ a.source }}</td>
+                    <td><span class="badge-status badge-{% if a.status == 'confirmed' %}success{% elif a.status == 'new' %}pending{% else %}info{% endif %}">{{ a.status }}</span></td>
+                    <td>{{ a.title|truncatechars:50 }}</td>
+                    <td class="mono">{{ a.source_ip|default:"—" }}</td>
+                    <td class="mono">{{ a.destination_ip|default:"" }}{% if a.destination_port %}:{{ a.destination_port }}{% endif %}</td>
+                    <td>{{ a.confidence|floatformat:0 }}%</td>
+                    <td>{{ a.created_at|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center;color:var(--text-muted);">No alerts</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2 section">
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot blue"></span> Defense Actions</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Action</th><th>Status</th><th>Target</th><th>Confidence</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for a in actions %}
+                <tr>
+                    <td class="mono">{{ a.action_type }}</td>
+                    <td><span class="badge-status badge-{% if a.status == 'active' %}success{% elif a.status == 'failed' %}failed{% else %}pending{% endif %}">{{ a.status }}</span></td>
+                    <td class="mono">{{ a.target_ip|default:"—" }}</td>
+                    <td>{{ a.confidence|floatformat:0 }}%</td>
+                    <td>{{ a.created_at|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No actions taken</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot blue"></span> Anomalous Traffic</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Source</th><th>Destination</th><th>Protocol</th><th>Size</th><th>Score</th><th>Time</th></tr></thead>
+                <tbody>
+                {% for t in traffic %}
+                <tr>
+                    <td class="mono">{{ t.source_ip }}:{{ t.source_port|default:"" }}</td>
+                    <td class="mono">{{ t.destination_ip }}:{{ t.destination_port|default:"" }}</td>
+                    <td>{{ t.protocol }}</td>
+                    <td>{{ t.packet_size }}B</td>
+                    <td>{{ t.anomaly_score|floatformat:2|default:"—" }}</td>
+                    <td>{{ t.timestamp|timesince }} ago</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No anomalous traffic</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

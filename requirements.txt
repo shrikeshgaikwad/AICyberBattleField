@@ -1,0 +1,48 @@
+# Django Framework
+Django>=4.2,<5.0
+django-environ>=0.11.2
+django-extensions>=3.2.3
+django-cors-headers>=4.3.1
+
+# Database
+psycopg2-binary>=2.9.9
+django-redis>=5.4.0
+
+# LLM Integration
+requests>=2.31.0
+ollama>=0.3.0
+
+# Red Team - Reconnaissance & Exploitation
+python-nmap>=0.7.1
+pymetasploit3>=1.0.3
+boofuzz>=0.4.1
+
+# Blue Team - Detection & Analysis
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=1.5.0
+scapy>=2.5.0
+yara-python>=4.3.0
+
+# Task Queue
+celery>=5.3.0
+redis>=5.0.0
+
+# Dashboard / API
+djangorestframework>=3.14.0
+channels>=4.0.0
+channels-redis>=4.1.0
+daphne>=4.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+rich>=13.7.0
+click>=8.1.0
+
+# Testing
+pytest>=7.4.0
+pytest-django>=4.7.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0
+responses>=0.24.0

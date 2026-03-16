@@ -1,0 +1,197 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Cyber Battlefield — Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>⚔️ Cyber Battlefield Command Center</h1>
+    <p>Dual Autonomous AI — Real-time Attack & Defense Overview</p>
+</div>
+
+<!-- Red Team Stats -->
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title"><span class="dot red"></span> Red Team — Offensive AI</h2>
+    </div>
+    <div class="grid grid-4">
+        <div class="card stat-card red">
+            <div class="stat-label">Total Scans</div>
+            <div class="stat-value">{{ red_stats.total_scans }}</div>
+            <div class="stat-sub">{{ red_stats.completed_scans }} completed</div>
+        </div>
+        <div class="card stat-card red">
+            <div class="stat-label">Vulnerabilities</div>
+            <div class="stat-value">{{ red_stats.total_vulns }}</div>
+            <div class="stat-sub">{{ red_stats.critical_vulns }} critical, {{ red_stats.high_vulns }} high</div>
+        </div>
+        <div class="card stat-card red">
+            <div class="stat-label">Exploit Attempts</div>
+            <div class="stat-value">{{ red_stats.total_exploits }}</div>
+            <div class="stat-sub">{{ red_stats.successful_exploits }} successful</div>
+        </div>
+        <div class="card stat-card red">
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value">
+                {% if red_stats.total_exploits > 0 %}
+                    {% widthratio red_stats.successful_exploits red_stats.total_exploits 100 %}%
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blue Team Stats -->
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title"><span class="dot blue"></span> Blue Team — Defensive AI</h2>
+    </div>
+    <div class="grid grid-4">
+        <div class="card stat-card blue">
+            <div class="stat-label">Security Alerts</div>
+            <div class="stat-value">{{ blue_stats.total_alerts }}</div>
+            <div class="stat-sub">{{ blue_stats.new_alerts }} unresolved</div>
+        </div>
+        <div class="card stat-card blue">
+            <div class="stat-label">Critical Alerts</div>
+            <div class="stat-value">{{ blue_stats.critical_alerts }}</div>
+        </div>
+        <div class="card stat-card blue">
+            <div class="stat-label">Active Blocks</div>
+            <div class="stat-value">{{ blue_stats.active_blocks }}</div>
+            <div class="stat-sub">{{ blue_stats.total_actions }} total actions</div>
+        </div>
+        <div class="card stat-card blue">
+            <div class="stat-label">Traffic Analyzed</div>
+            <div class="stat-value">{{ blue_stats.total_traffic }}</div>
+            <div class="stat-sub">{{ blue_stats.anomalous_traffic }} anomalous</div>
+        </div>
+    </div>
+</div>
+
+<!-- Simulation Stats -->
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title"><span class="dot purple"></span> Simulation Status</h2>
+    </div>
+    <div class="grid grid-3">
+        <div class="card stat-card purple">
+            <div class="stat-label">Simulations</div>
+            <div class="stat-value">{{ simulation_stats.total_simulations }}</div>
+            <div class="stat-sub">{{ simulation_stats.running }} running</div>
+        </div>
+        <div class="card stat-card green">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">{{ simulation_stats.completed }}</div>
+        </div>
+        <div class="card stat-card purple">
+            <div class="stat-label">Total Rounds</div>
+            <div class="stat-value">{{ simulation_stats.total_rounds }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="grid grid-2 section">
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom: 1rem;"><span class="dot red"></span> Recent Scans</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Type</th><th>Target</th><th>Status</th><th>Time</th></tr>
+                </thead>
+                <tbody>
+                    {% for scan in recent_scans %}
+                    <tr>
+                        <td class="mono">{{ scan.scan_type }}</td>
+                        <td class="mono">{{ scan.target_ip }}</td>
+                        <td><span class="badge-status badge-{% if scan.status == 'completed' %}success{% elif scan.status == 'running' %}running{% elif scan.status == 'failed' %}failed{% else %}pending{% endif %}">{{ scan.status }}</span></td>
+                        <td>{{ scan.created_at|timesince }} ago</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No scans yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="section-title" style="margin-bottom: 1rem;"><span class="dot blue"></span> Recent Alerts</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Severity</th><th>Title</th><th>Source IP</th><th>Time</th></tr>
+                </thead>
+                <tbody>
+                    {% for alert in recent_alerts %}
+                    <tr>
+                        <td><span class="badge-severity badge-{{ alert.severity }}">{{ alert.severity }}</span></td>
+                        <td>{{ alert.title|truncatechars:50 }}</td>
+                        <td class="mono">{{ alert.source_ip|default:"—" }}</td>
+                        <td>{{ alert.created_at|timesince }} ago</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No alerts yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Agent Actions -->
+<div class="section">
+    <div class="section-header">
+        <h2 class="section-title"><span class="dot green"></span> Agent Activity Feed</h2>
+    </div>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Team</th><th>Agent</th><th>Action</th><th>Target</th><th>Result</th><th>Time</th></tr>
+                </thead>
+                <tbody>
+                    {% for action in recent_actions %}
+                    <tr>
+                        <td><span class="badge-severity badge-{% if action.agent_type == 'red' %}critical{% else %}info{% endif %}">{{ action.agent_type }}</span></td>
+                        <td>{{ action.agent_name }}</td>
+                        <td class="mono">{{ action.action_name }}</td>
+                        <td class="mono">{{ action.target|truncatechars:25 }}</td>
+                        <td>
+                            {% if action.success %}
+                                <span class="badge-status badge-success">✓</span>
+                            {% elif action.success == False %}
+                                <span class="badge-status badge-failed">✗</span>
+                            {% else %}
+                                <span class="badge-status badge-pending">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ action.created_at|timesince }} ago</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No actions yet — launch a scan or simulation!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh dashboard data every 10 seconds
+setInterval(async () => {
+    try {
+        const resp = await fetch('{% url "dashboard:dashboard_data" %}');
+        const data = await resp.json();
+        // Could update stat cards dynamically here
+        console.log('Dashboard data refreshed:', data);
+    } catch (e) {
+        console.error('Refresh failed:', e);
+    }
+}, 10000);
+</script>
+{% endblock %}
