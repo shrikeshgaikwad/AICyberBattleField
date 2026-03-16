@@ -5,6 +5,25 @@
     <h1>⚔️ Red vs Blue Simulations</h1>
     <p>Adversarial co-evolution — attack and defense learning cycles</p>
 </div>
+<div class="section">
+    <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot green"></span> Trigger Simulation</h3>
+    <div class="card" style="margin-bottom:2rem;">
+        <form action="{% url 'dashboard:simulation_logs' %}" method="POST" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            {% csrf_token %}
+            <div style="flex: 1; min-width: 200px;">
+                <label for="targetIp" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.875rem;">Target IP / Subnet</label>
+                <input type="text" id="targetIp" name="target_ip" value="192.168.100.2" style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); outline: none;" required>
+            </div>
+            <div style="flex: 1; min-width: 120px; max-width: 200px;">
+                <label for="maxRounds" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.875rem;">Max Rounds</label>
+                <input type="number" id="maxRounds" name="max_rounds" value="5" min="1" max="100" style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); outline: none;" required>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-blue" style="padding: 0.75rem 1.5rem; font-size: 1rem;">▶ Execute</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div class="section">
     <h3 class="section-title" style="margin-bottom:1rem;"><span class="dot purple"></span> Simulations</h3>
