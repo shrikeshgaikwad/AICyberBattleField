@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Simulation Logs - Cyber Battlefield{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-terminal text-success me-2"></i>Live Simulation Logs</h2>
+        <div>
+            {% if target_ip %}
+            <span class="badge bg-danger fs-6 me-2">Target: {{ target_ip }}</span>
+            <span class="badge bg-info fs-6">Rounds: {{ max_rounds }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-code me-2"></i>Execution Output</span>
+                <div>
+                    <span id="connection-status" class="badge bg-warning"><i class="fas fa-spinner fa-spin me-1"></i>Connecting...</span>
+                    <a href="{% url 'dashboard:simulations' %}" class="btn btn-sm btn-outline-light ms-2">Back to Dashboard</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <!-- Log Container styled like a terminal -->
+                <div id="log-container" class="bg-black text-light p-3 font-monospace" style="height: 600px; overflow-y: auto; font-size: 0.9rem;">
+                    <!-- Logs will be streamed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const logContainer = document.getElementById('log-container');
+        const statusBadge = document.getElementById('connection-status');
+        
+        let connectSSE = function() {
+            // Connect to the streaming endpoint
+            const eventSource = new EventSource("{% url 'dashboard:stream_logs' %}");
+            
+            eventSource.onopen = function() {
+                statusBadge.className = "badge bg-success";
+                statusBadge.innerHTML = '<i class="fas fa-satellite-dish me-1"></i>Live';
+            };
+            
+            eventSource.onmessage = function(event) {
+                // Parse ANSI colors roughly, or just display raw if no ANSI parser is included
+                // Assuming raw text output
+                const newSpan = document.createElement('div');
+                
+                // Colorize critical keywords to make it look nicer
+                let htmlContent = event.data;
+                htmlContent = htmlContent.replace(/\[\d{4}-\d{2}-\d{2}.*?\]/g, '<span class="text-secondary">$&</span>');
+                htmlContent = htmlContent.replace(/INFO/g, '<span class="text-info">INFO</span>');
+                htmlContent = htmlContent.replace(/WARNING/g, '<span class="text-warning">WARNING</span>');
+                htmlContent = htmlContent.replace(/ERROR/g, '<span class="text-danger">ERROR</span>');
+                htmlContent = htmlContent.replace(/CRITICAL/g, '<span class="text-danger fw-bold">CRITICAL</span>');
+                htmlContent = htmlContent.replace(/DEBUG/g, '<span class="text-muted">DEBUG</span>');
+                
+                newSpan.innerHTML = htmlContent;
+                logContainer.appendChild(newSpan);
+                
+                // Auto-scroll to bottom
+                logContainer.scrollTop = logContainer.scrollHeight;
+            };
+            
+            eventSource.onerror = function() {
+                statusBadge.className = "badge bg-danger";
+                statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Disconnected';
+                eventSource.close();
+                
+                // Optional: Attempt to reconnect after 5 seconds
+                // setTimeout(connectSSE, 5000);
+            };
+        };
+        
+        // Start connection
+        connectSSE();
+    });
+</script>
+{% endblock %}

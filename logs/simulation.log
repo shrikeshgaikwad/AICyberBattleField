@@ -38,3 +38,4 @@
 {"timestamp": "2026-03-13T09:50:36.273460+00:00", "level": "INFO", "logger": "simulation", "module": "scheduler", "function": "create_simulation", "line": 46, "message": "Simulation created: CLI Simulation (3 rounds, targets: ['10.10.13.190'])"}
 {"timestamp": "2026-03-13T09:50:40.546341+00:00", "level": "INFO", "logger": "simulation", "module": "scheduler", "function": "_run_round", "line": 141, "message": "Round 1: Red Team attacking 10.10.13.190"}
 {"timestamp": "2026-03-16T09:05:53.182644+00:00", "level": "INFO", "logger": "simulation", "module": "scheduler", "function": "create_simulation", "line": 46, "message": "Simulation created: CLI Simulation (3 rounds, targets: ['10.10.11.133'])"}
+{"timestamp": "2026-03-16T09:06:14.437377+00:00", "level": "INFO", "logger": "simulation", "module": "scheduler", "function": "_run_round", "line": 141, "message": "Round 1: Red Team attacking 10.10.11.133"}

@@ -1,16 +1,20 @@
 """
 Dashboard Views - Web frontend for the Cyber Battlefield
 """
-
-from django.http import JsonResponse
-from django.shortcuts import render
+import os
+import io
+import time
+import threading
+from django.core.management import call_command
+from django.http import JsonResponse, StreamingHttpResponse
+from django.shortcuts import render, redirect
 from django.views import View
+from django.conf import settings
 
 from blue_team.models import Alert, DefenseAction, TrafficLog
 from core.models import AgentAction, AIDecision, SystemEvent
 from red_team.models import AttackPlan, ExploitAttempt, ScanResult, Vulnerability
 from simulation.models import SimulationConfig, SimulationRound
-
 
 class DashboardView(View):
     """Main dashboard overview."""
@@ -108,3 +112,61 @@ class DashboardDataAPIView(View):
                 for r in rounds
             ],
         })
+
+class SimulationLogsView(View):
+    def post(self, request):
+        target_ip = request.POST.get("target_ip")
+        max_rounds = request.POST.get("max_rounds", 5)
+
+        if not target_ip:
+            return redirect("dashboard:simulations")
+
+        # Start the simulation background thread
+        def run_sim():
+            try:
+                # Truncate real log to clear old simulation data
+                log_file = settings.BASE_DIR / "logs/simulation.log"
+                if log_file.exists():
+                    open(log_file, 'w').close()
+                    
+                call_command("simulate", targets=[target_ip], rounds=int(max_rounds))
+            except Exception as e:
+                print(f"Simulation execution error: {e}")
+
+        thread = threading.Thread(target=run_sim, daemon=True)
+        thread.start()
+
+        context = {
+            "target_ip": target_ip,
+            "max_rounds": max_rounds,
+        }
+        return render(request, "dashboard/simulation_logs.html", context)
+
+    def get(self, request):
+        return render(request, "dashboard/simulation_logs.html")
+
+class SimulationStreamView(View):
+    def get(self, request):
+        def event_stream():
+            log_file_path = settings.BASE_DIR / "logs/simulation.log"
+            
+            # If the log file doesn't exist yet, wait
+            while not log_file_path.exists():
+                time.sleep(1)
+
+            with open(log_file_path, "r") as f:
+                # Determine file size
+                f.seek(0, os.SEEK_END)
+                # Keep track of file position
+                while True:
+                    line = f.readline()
+                    if not line:
+                        time.sleep(0.5)
+                        continue
+                    yield f"data: {line}\n\n"
+
+        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no" # For Nginx
+        return response
+
