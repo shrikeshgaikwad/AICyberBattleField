@@ -156,7 +156,7 @@ class SimulationStreamView(View):
 
             with open(log_file_path, "r") as f:
                 # Determine file size
-                f.seek(0, os.SEEK_END)
+                f.seek(0)
                 # Keep track of file position
                 while True:
                     line = f.readline()
