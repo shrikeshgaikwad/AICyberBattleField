@@ -1,0 +1,37 @@
+{
+  "q_table": {
+    "medium:traffic_monitor:high": {
+      "block_ip": 0.0,
+      "rate_limit": 6.405090000000001,
+      "honeypot": 0.0,
+      "isolate": 0.0,
+      "patch": 0.0,
+      "alert_admin": 7.028385,
+      "update_rules": 0.0,
+      "quarantine": 0.0,
+      "ignore": 0.0
+    },
+    "critical:ids:high": {
+      "block_ip": 1.0,
+      "rate_limit": 0.0,
+      "honeypot": 0.0,
+      "isolate": 0.0,
+      "patch": 0.0,
+      "alert_admin": 1.5,
+      "update_rules": 0.0,
+      "quarantine": 0.0,
+      "ignore": 0.0
+    }
+  },
+  "action_counts": {
+    "medium:traffic_monitor:high": {
+      "rate_limit": 6,
+      "alert_admin": 6
+    },
+    "critical:ids:high": {
+      "block_ip": 1,
+      "alert_admin": 1
+    }
+  },
+  "epsilon": 0.13565731125132066
+}

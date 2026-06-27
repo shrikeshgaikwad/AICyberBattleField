@@ -1,8 +1,8 @@
 """
-Red Team Agent - Orchestrator
-===============================
-Implements the full attack lifecycle:
-Recon → Detect Vulns → Plan Attack → Execute Exploits → Observe → Adapt
+Red Team Agent - Orchestrator (v2 — Enhanced with Memory, RL, and Topology)
+=============================================================================
+Implements the full attack lifecycle with learning and memory:
+Recall → Recon → Detect Vulns → Plan Attack → Execute Exploits → Observe → Learn → Adapt
 """
 
 import logging
@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from core.event_bus import Event, EventType, get_event_bus
 from core.logger import AgentLogger
+from core.memory import AgentMemory, MemoryEntry
 from core.models import AgentAction
 from core.safety import SafetyError, get_safety_module
 from red_team.exploitation.launcher import ExploitLauncher
@@ -20,6 +21,7 @@ from red_team.fuzzing.fuzzer import Fuzzer
 from red_team.models import AttackPlan, ExploitAttempt, ScanResult, Vulnerability
 from red_team.planner.planner import AttackPlanner
 from red_team.recon.scanner import ReconScanner
+from red_team.rl_policy import RedTeamPolicy
 from red_team.vuln_detection.detector import VulnerabilityDetector
 
 logger = logging.getLogger("red_team")
@@ -27,8 +29,8 @@ logger = logging.getLogger("red_team")
 
 class RedTeamAgent:
     """
-    Autonomous offensive AI agent.
-    Orchestrates the full attack lifecycle with feedback loops.
+    Autonomous offensive AI agent (v2).
+    Now with episodic memory, reinforcement learning, and topology awareness.
     """
 
     def __init__(self, name: str = "RedAgent-1"):
@@ -42,11 +44,19 @@ class RedTeamAgent:
         self.safety = get_safety_module()
         self.event_bus = get_event_bus()
 
+        # v2: Memory and RL
+        self.memory = AgentMemory(name, "red")
+        self.rl_policy = RedTeamPolicy()
+        self.topology = None  # Set from simulation scheduler
+
+    def set_topology(self, topology):
+        """Set the network topology for topology-aware attacks."""
+        self.topology = topology
+
     def run_full_attack(self, target_ip: str, round_id=None) -> dict:
         """
         Execute a full attack cycle against a target.
-
-        Returns dict with summary of all results.
+        v2: Uses memory recall and RL for smarter decisions.
         """
         self.agent_logger.action("full_attack_start", target=target_ip)
         results = {
@@ -57,6 +67,7 @@ class RedTeamAgent:
             "exploit_attempts": [],
             "success": False,
             "errors": [],
+            "memory_used": False,
         }
 
         try:
@@ -65,11 +76,27 @@ class RedTeamAgent:
                 results["errors"].append(f"Target {target_ip} not in allowed scope")
                 return results
 
+            # v2: Recall past experiences with this target
+            memory_context = self.memory.build_context_summary(target_ip=target_ip)
+            past_strategies = self.memory.recall_for_target(target_ip, limit=5)
+            if past_strategies:
+                results["memory_used"] = True
+                self.agent_logger.info(f"Recalled {len(past_strategies)} past experiences with {target_ip}")
+
             # Phase 1: Reconnaissance
             self.agent_logger.action("recon", target=target_ip, details="Starting nmap TCP scan")
             scan = self.scanner.nmap_scan(target_ip, port_range="1-10000", round_id=round_id)
             if not scan or scan.status == ScanResult.Status.FAILED:
                 results["errors"].append("Scan failed")
+                self.memory.remember(
+                    memory_type=MemoryEntry.MemoryType.ATTACK_FAILURE,
+                    action_taken="nmap_scan",
+                    target_ip=target_ip,
+                    success=False,
+                    outcome="Scan failed",
+                    reward=-5.0,
+                    round_id=round_id,
+                )
                 return results
 
             results["scan"] = {
@@ -88,9 +115,24 @@ class RedTeamAgent:
             ]
             self._log_action("vuln_detection", target_ip, True, f"Found {len(vulns)} vulnerabilities", round_id)
 
+            # v2: Remember discovered vulnerabilities
+            for v in vulns:
+                self.memory.remember(
+                    memory_type=MemoryEntry.MemoryType.STRATEGY,
+                    action_taken="vuln_discovered",
+                    target_ip=target_ip,
+                    target_port=v.affected_port,
+                    target_service=v.affected_service,
+                    success=True,
+                    outcome=f"{v.cve_id}: {v.title} ({v.severity})",
+                    lesson=f"Service {v.affected_service} on port {v.affected_port} has {v.severity} vulnerability {v.cve_id}",
+                    reward=10.0 if v.severity in ("critical", "high") else 5.0,
+                    tags=[v.severity, v.affected_service, v.cve_id or "no-cve"],
+                    round_id=round_id,
+                )
+
             if not vulns:
                 self.agent_logger.info("No vulnerabilities found, trying fuzzing")
-                # Run fuzzer on HTTP ports
                 for port in scan.open_ports:
                     if port.get("service") in ("http", "https"):
                         scheme = "https" if port.get("service") == "https" else "http"
@@ -102,8 +144,8 @@ class RedTeamAgent:
                             results["fuzzing"] = fuzz_result
                 return results
 
-            # Phase 3: Attack Planning
-            self.agent_logger.action("planning", target=target_ip, details="Creating attack plan")
+            # Phase 3: Attack Planning (v2 - with memory context)
+            self.agent_logger.action("planning", target=target_ip, details="Creating attack plan with memory context")
             plan = self.planner.create_plan(scan, vulns, round_id=round_id)
             if plan:
                 results["attack_plan"] = {
@@ -115,8 +157,8 @@ class RedTeamAgent:
             else:
                 self.agent_logger.warning("Failed to create attack plan, executing ad-hoc exploits")
 
-            # Phase 4: Exploit Execution
-            self.agent_logger.action("exploitation", target=target_ip, details="Executing exploits")
+            # Phase 4: Exploit Execution (v2 - RL-guided action selection)
+            self.agent_logger.action("exploitation", target=target_ip, details="Executing RL-guided exploits")
             exploit_results = self._execute_plan(plan, vulns, target_ip, round_id)
             results["exploit_attempts"] = exploit_results
 
@@ -128,6 +170,41 @@ class RedTeamAgent:
                 plan.save()
 
             results["success"] = any(e.get("success") for e in exploit_results)
+
+            # v2: RL update and memory storage for exploit outcomes
+            for exp_result in exploit_results:
+                service = exp_result.get("service", "unknown")
+                port = exp_result.get("port", 80)
+                action = exp_result.get("action", "exploit")
+                success = exp_result.get("success", False)
+
+                reward = self.rl_policy.compute_reward(exp_result)
+                self.rl_policy.update(service, port, action, reward)
+
+                self.memory.remember(
+                    memory_type=(MemoryEntry.MemoryType.ATTACK_SUCCESS if success
+                                 else MemoryEntry.MemoryType.ATTACK_FAILURE),
+                    action_taken=action,
+                    target_ip=target_ip,
+                    target_port=port,
+                    target_service=service,
+                    success=success,
+                    outcome=exp_result.get("output", "")[:300],
+                    lesson=(f"{action} on {service}:{port} {'succeeded' if success else 'failed'}"),
+                    reward=reward,
+                    tags=[action, service, "success" if success else "failure"],
+                    round_id=round_id,
+                )
+
+            # v2: Check for lateral movement opportunities
+            if results["success"] and self.topology:
+                lateral_targets = self.topology.get_lateral_targets(target_ip)
+                if lateral_targets:
+                    results["lateral_targets"] = [h.ip_address for h in lateral_targets[:5]]
+                    self.agent_logger.info(
+                        f"Lateral movement possible to {len(lateral_targets)} hosts"
+                    )
+
             self.agent_logger.result(
                 "full_attack",
                 results["success"],
@@ -156,18 +233,41 @@ class RedTeamAgent:
                     results.append({"step": step.get("step_number"), "success": False, "error": str(e)})
                     break
         else:
-            # Ad-hoc: try to exploit each high/critical vuln
+            # v2: RL-guided ad-hoc exploitation
             exploitable = [v for v in vulns if v.exploitable and v.severity in ("critical", "high")]
-            for vuln in exploitable[:5]:  # Limit to top 5
+            for vuln in exploitable[:5]:
+                service = vuln.affected_service or "unknown"
+                port = vuln.affected_port or 80
+
+                # v2: Use RL to pick best exploit action
+                best_action = self.rl_policy.select_action(
+                    service=service,
+                    port=port,
+                    defense_level="unknown",
+                    available_actions=["exploit_metasploit", "exploit_sqlmap", "bruteforce", "fuzz"],
+                )
+
+                # Map RL action back to exploit type
+                exploit_type_map = {
+                    "exploit_metasploit": ExploitAttempt.ExploitType.METASPLOIT,
+                    "exploit_sqlmap": ExploitAttempt.ExploitType.SQLMAP,
+                    "bruteforce": ExploitAttempt.ExploitType.BRUTEFORCE,
+                    "fuzz": ExploitAttempt.ExploitType.FUZZING,
+                }
+                exploit_type = exploit_type_map.get(best_action, ExploitAttempt.ExploitType.CUSTOM)
+
                 attempt = self.exploit_launcher.launch(
                     target_ip=target_ip,
-                    target_port=vuln.affected_port or 80,
-                    exploit_type=ExploitAttempt.ExploitType.CUSTOM,
+                    target_port=port,
+                    exploit_type=exploit_type,
                     vulnerability=vuln,
                     round_id=round_id,
                 )
                 results.append({
                     "vuln": vuln.title,
+                    "action": best_action,
+                    "service": service,
+                    "port": port,
                     "success": attempt.status == ExploitAttempt.Status.SUCCESS,
                     "output": attempt.output[:200],
                 })
@@ -194,6 +294,8 @@ class RedTeamAgent:
             return {
                 "step": step.get("step_number"),
                 "action": action,
+                "service": step.get("target_service", "unknown"),
+                "port": port,
                 "success": attempt.status == ExploitAttempt.Status.SUCCESS,
                 "output": attempt.output[:200],
             }
@@ -208,6 +310,8 @@ class RedTeamAgent:
             return {
                 "step": step.get("step_number"),
                 "action": action,
+                "service": step.get("target_service", "unknown"),
+                "port": port,
                 "success": attempt.status == ExploitAttempt.Status.SUCCESS,
                 "output": attempt.output[:200],
             }
@@ -222,6 +326,8 @@ class RedTeamAgent:
             return {
                 "step": step.get("step_number"),
                 "action": action,
+                "service": step.get("target_service", "unknown"),
+                "port": port,
                 "success": attempt.status == ExploitAttempt.Status.SUCCESS,
                 "output": attempt.output[:200],
             }
@@ -232,17 +338,37 @@ class RedTeamAgent:
                 parameters=params,
                 iterations=params.get("iterations", 50),
             )
-            return {"step": step.get("step_number"), "action": action, **result}
+            return {
+                "step": step.get("step_number"),
+                "action": action,
+                "service": step.get("target_service", "unknown"),
+                "port": port,
+                **result,
+            }
 
         elif action in ("nmap_scan", "vuln_scan", "enumerate_service"):
             scan = self.scanner.nmap_scan(target_ip, port_range=str(port), round_id=round_id)
             return {
                 "step": step.get("step_number"),
                 "action": action,
+                "service": step.get("target_service", "unknown"),
+                "port": port,
                 "success": scan and scan.status == ScanResult.Status.COMPLETED,
             }
 
-        return {"step": step.get("step_number"), "action": action, "success": False, "error": "Unknown action"}
+        return {
+            "step": step.get("step_number"),
+            "action": action,
+            "port": port,
+            "success": False,
+            "error": "Unknown action",
+        }
+
+    def end_round(self):
+        """Called at end of round to persist learning."""
+        self.rl_policy.save_policy()
+        self.rl_policy.decay_exploration()
+        self.memory.decay_memories(decay_factor=0.97)
 
     def _log_action(self, action: str, target: str, success: bool, details: str, round_id=None):
         """Log an agent action to the database."""

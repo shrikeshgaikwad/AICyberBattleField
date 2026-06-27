@@ -34,6 +34,10 @@ class EventType(Enum):
     IP_BLOCKED = "ip_blocked"
     HONEYPOT_DEPLOYED = "honeypot_deployed"
     DEFENSE_ADAPTED = "defense_adapted"
+    RESPONSE_TRIGGERED = "response_triggered"
+
+    # Red Team v2 events
+    LATERAL_MOVEMENT = "lateral_movement"
 
     # Simulation events
     ROUND_STARTED = "round_started"

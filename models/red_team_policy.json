@@ -1,0 +1,16 @@
+{
+  "q_table": {
+    "postgresql db 9.6.0 or later:5432:unknown": {
+      "exploit_metasploit": -0.5,
+      "exploit_sqlmap": 0.0,
+      "bruteforce": 0.0,
+      "fuzz": 0.0
+    }
+  },
+  "action_counts": {
+    "postgresql db 9.6.0 or later:5432:unknown": {
+      "exploit_metasploit": 1
+    }
+  },
+  "epsilon": 0.13565731125132066
+}
